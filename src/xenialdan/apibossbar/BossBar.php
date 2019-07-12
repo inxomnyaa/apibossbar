@@ -7,10 +7,10 @@ use pocketmine\entity\Attribute;
 use pocketmine\entity\AttributeMap;
 use pocketmine\entity\DataPropertyManager;
 use pocketmine\entity\Entity;
-use pocketmine\network\mcpe\protocol\AddEntityPacket;
+use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
-use pocketmine\network\mcpe\protocol\RemoveEntityPacket;
-use pocketmine\network\mcpe\protocol\SetEntityDataPacket;
+use pocketmine\network\mcpe\protocol\RemoveActorPacket;
+use pocketmine\network\mcpe\protocol\SetActorDataPacket;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
 use pocketmine\Player;
 use pocketmine\Server;
@@ -152,7 +152,7 @@ class BossBar
     public function setTitle(string $title = ""): BossBar
     {
         $this->title = $title;
-        $this->sendEntityDataPacket($this->getPlayers());
+        $this->sendActorDataPacket($this->getPlayers());
         $this->sendBossTextPacket($this->getPlayers());
         return $this;
     }
@@ -173,7 +173,7 @@ class BossBar
     public function setSubTitle(string $subTitle = ""): BossBar
     {
         $this->subTitle = $subTitle;
-        $this->sendEntityDataPacket($this->getPlayers());
+        $this->sendActorDataPacket($this->getPlayers());
         $this->sendBossTextPacket($this->getPlayers());
         return $this;
     }
@@ -275,7 +275,7 @@ class BossBar
         if ($entity instanceof Entity && ($entity->isClosed() || $entity->isFlaggedForDespawn())) throw new \InvalidArgumentException("Entity $entity can not be used since its not valid anymore (closed or flagged for despawn)");
         if ($this->getEntity() instanceof Entity && !$entity instanceof Player) $this->getEntity()->flagForDespawn();
         else {
-            $pk = new RemoveEntityPacket();
+            $pk = new RemoveActorPacket();
             $pk->entityUniqueId = $this->entityId;
             Server::getInstance()->broadcastPacket($this->getPlayers(), $pk);
         }
@@ -308,7 +308,7 @@ class BossBar
      */
     protected function sendSpawnPacket(array $players): void
     {
-        $pk = new AddEntityPacket();
+        $pk = new AddActorPacket();
         $pk->entityRuntimeId = $this->entityId;
         $pk->type = $this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID;
         $pk->attributes = $this->getAttributeMap()->getAll();
