@@ -374,7 +374,7 @@ class BossBar
     protected function sendEntityDataPacket(array $players): void
     {
         $this->getPropertyManager()->setString(Entity::DATA_NAMETAG, $this->getFullTitle());
-        $pk = new SetEntityDataPacket();
+        $pk = new SetActorDataPacket();
         $pk->metadata = $this->getPropertyManager()->getDirty();
         $pk->entityRuntimeId = $this->entityId;
         Server::getInstance()->broadcastPacket($players, $pk);
