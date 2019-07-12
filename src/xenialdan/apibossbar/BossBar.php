@@ -152,7 +152,7 @@ class BossBar
     public function setTitle(string $title = ""): BossBar
     {
         $this->title = $title;
-        $this->sendActorDataPacket($this->getPlayers());
+        $this->sendEntityDataPacket($this->getPlayers());
         $this->sendBossTextPacket($this->getPlayers());
         return $this;
     }
