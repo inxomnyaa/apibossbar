@@ -8,9 +8,9 @@ use pocketmine\entity\Attribute;
 use pocketmine\entity\AttributeMap;
 use pocketmine\entity\DataPropertyManager;
 use pocketmine\entity\Entity;
-use pocketmine\network\mcpe\protocol\AddEntityPacket;
+use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
-use pocketmine\network\mcpe\protocol\SetEntityDataPacket;
+use pocketmine\network\mcpe\protocol\SetActorDataPacket;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
 use pocketmine\Player;
 
@@ -88,7 +88,7 @@ class DiverseBossBar extends BossBar
     {
         foreach ($players as $player) {
             $this->titles[$player->getId()] = $title;
-            $this->sendEntityDataPacket([$player]);
+            $this->sendActorDataPacket([$player]);
             $this->sendBossTextPacket([$player]);
         }
         return $this;
@@ -108,7 +108,7 @@ class DiverseBossBar extends BossBar
     {
         foreach ($players as $player) {
             $this->subTitles[$player->getId()] = $subTitle;
-            $this->sendEntityDataPacket([$player]);
+            $this->sendDataPacket([$player]);
             $this->sendBossTextPacket([$player]);
         }
         return $this;
@@ -175,7 +175,7 @@ class DiverseBossBar extends BossBar
      */
     protected function sendSpawnPacket(array $players): void
     {
-        $pk = new AddEntityPacket();
+        $pk = new AddActorPacket();
         $pk->entityRuntimeId = $this->entityId;
         $pk->type = $this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID;
         foreach ($players as $player) {
@@ -238,7 +238,7 @@ class DiverseBossBar extends BossBar
      */
     protected function sendEntityDataPacket(array $players): void
     {
-        $pk = new SetEntityDataPacket();
+        $pk = new SetActorDataPacket();
         $pk->entityRuntimeId = $this->entityId;
         foreach ($players as $player) {
             //$this->getPropertyManager($player)->setString(Entity::DATA_NAMETAG, $this->getFullTitleFor($player));
