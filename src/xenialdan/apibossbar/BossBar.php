@@ -173,7 +173,7 @@ class BossBar
     public function setSubTitle(string $subTitle = ""): BossBar
     {
         $this->subTitle = $subTitle;
-        $this->sendActorDataPacket($this->getPlayers());
+        $this->sendEntityDataPacket($this->getPlayers());
         $this->sendBossTextPacket($this->getPlayers());
         return $this;
     }
