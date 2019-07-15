@@ -88,7 +88,7 @@ class DiverseBossBar extends BossBar
     {
         foreach ($players as $player) {
             $this->titles[$player->getId()] = $title;
-            $this->sendActorDataPacket([$player]);
+            $this->sendEntityDataPacket([$player]);
             $this->sendBossTextPacket([$player]);
         }
         return $this;
