@@ -88,7 +88,7 @@ class DiverseBossBar extends BossBar
     {
         foreach ($players as $player) {
             $this->titles[$player->getId()] = $title;
-            $this->sendEntityDataPacket([$player]);
+            #$this->sendEntityDataPacket([$player]);
             $this->sendBossTextPacket([$player]);
         }
         return $this;
@@ -108,7 +108,7 @@ class DiverseBossBar extends BossBar
     {
         foreach ($players as $player) {
             $this->subTitles[$player->getId()] = $subTitle;
-            $this->sendEntityDataPacket([$player]);
+            #$this->sendEntityDataPacket([$player]);
             $this->sendBossTextPacket([$player]);
         }
         return $this;
@@ -136,7 +136,7 @@ class DiverseBossBar extends BossBar
      */
     public function setPercentageFor(array $players, float $percentage): DiverseBossBar
     {
-        $percentage = (float)max(0.01, $percentage);
+        $percentage = (float)max(0.00, $percentage);
         foreach ($players as $player) {
             $this->getAttributeMap($player)->getAttribute(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap($player)->getAttribute(Attribute::HEALTH)->getMaxValue(), true, true);
         }
@@ -172,6 +172,7 @@ class DiverseBossBar extends BossBar
 
     /**
      * @param Player[] $players
+     *@deprecated
      */
     protected function sendSpawnPacket(array $players): void
     {
