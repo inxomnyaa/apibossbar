@@ -1,6 +1,6 @@
 name: apibossbar
-version: 0.0.4
+version: 0.0.5
 antigen: xenialdan\apibossbar
-api: [3.9, 4.0.0]
+api: [3.13]
 php: [7.2]
 author: XenialDan

@@ -178,7 +178,7 @@ class DiverseBossBar extends BossBar
     {
         $pk = new AddActorPacket();
         $pk->entityRuntimeId = $this->entityId;
-        $pk->type = $this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID;
+        $pk->type = AddActorPacket::LEGACY_ID_MAP_BC[$this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID];
         foreach ($players as $player) {
             $pkc = clone $pk;
             $pkc->attributes = $this->getAttributeMap($player)->getAll();
