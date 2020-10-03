@@ -12,7 +12,7 @@ use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
 use pocketmine\network\mcpe\protocol\SetActorDataPacket;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\MainLogger;
 
@@ -45,7 +45,7 @@ class BossBar
      */
     public function __construct()
     {
-        $this->entityId = Entity::$entityCount++;
+        $this->entityId = Entity::nextRuntimeId();
         $this->attributeMap = new AttributeMap();
         $this->getAttributeMap()->addAttribute(Attribute::getAttribute(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
         $this->propertyManager = new DataPropertyManager();
@@ -286,7 +286,7 @@ class BossBar
             $this->propertyManager = $entity->getDataPropertyManager();
             if(!$entity instanceof Player) $entity->despawnFromAll();
         } else {
-            $this->entityId = Entity::$entityCount++;
+            $this->entityId = Entity::nextRuntimeId();
         }
         if(!$entity instanceof Player) $this->sendSpawnPacket($this->getPlayers());
         $this->sendBossPacket($this->getPlayers());

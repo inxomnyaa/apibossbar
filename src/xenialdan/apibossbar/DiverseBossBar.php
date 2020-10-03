@@ -12,7 +12,7 @@ use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\SetActorDataPacket;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 /**
  * Class DiverseBossBar
