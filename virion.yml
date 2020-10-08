@@ -1,5 +1,5 @@
 name: apibossbar
-version: 0.1.0
+version: 0.1.1
 antigen: xenialdan\apibossbar
 api: [4.0.0]
 php: [7.3]

@@ -10,7 +10,6 @@ use pocketmine\entity\AttributeMap;
 use pocketmine\entity\Entity;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
@@ -216,7 +215,7 @@ class BossBar
 		$pk = new BossEventPacket();
 		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_HIDE;
-		Server::getInstance()->broadcastPackets($players, [$pk]);
+		$this->broadcastPacket($players, $pk);
 	}
 
 	/**
@@ -235,9 +234,8 @@ class BossBar
 	public function showTo(array $players): void
 	{
 		$pk = new BossEventPacket();
-		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
-		Server::getInstance()->broadcastPackets($players, [$this->addDefaults($pk)]);
+		$this->broadcastPacket($players, $this->addDefaults($pk));
 	}
 
 	/**
@@ -253,6 +251,7 @@ class BossBar
 	 */
 	public function getEntity(): ?Entity
 	{
+		if ($this->entityId === null) return null;
 		return Server::getInstance()->getWorldManager()->findEntity($this->entityId);
 	}
 
@@ -296,28 +295,6 @@ class BossBar
 	}
 
 	/**
-	 * TODO if entity exists and is spawned, don't send again
-	 * TODO slime is not needed anymore. Use player
-	 * @param Player[] $players
-	 * @deprecated
-	 * @internal
-	 */
-	protected function sendSpawnPacket(array $players): void
-	{
-//		$pk = new AddActorPacket();
-//		$pk->entityRuntimeId = $this->entityId;
-//		$pk->type = AddActorPacket::LEGACY_ID_MAP_BC[$this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID];
-//		$pk->attributes = $this->getAttributeMap()->getAll();
-//		var_dump($this->getPropertyManager()->getAll());
-//		$pk->metadata = $this->getPropertyManager()->getAll();
-//		foreach ($players as $player) {
-//			$pkc = clone $pk;
-//			$pkc->position = $player->asVector3()->subtract(0, 28);
-//			$player->dataPacket($pkc);
-//		}
-	}
-
-	/**
 	 * @param Player[] $players
 	 */
 	protected function sendBossPacket(array $players): void
@@ -327,7 +304,7 @@ class BossBar
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		$pk->title = $this->getFullTitle();
 		$pk->healthPercent = $this->getPercentage();
-		Server::getInstance()->broadcastPackets($players, [$this->addDefaults($pk)]);
+		$this->broadcastPacket($players, $this->addDefaults($pk));
 	}
 
 	/**
@@ -338,7 +315,7 @@ class BossBar
 		$pk = new BossEventPacket();
 		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_HIDE;
-		Server::getInstance()->broadcastPackets($players, [$pk]);
+		$this->broadcastPacket($players, $pk);
 	}
 
 	/**
@@ -347,37 +324,21 @@ class BossBar
 	protected function sendBossTextPacket(array $players): void
 	{
 		$pk = new BossEventPacket();
-		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		$pk->title = $this->getFullTitle();
-		Server::getInstance()->broadcastPackets($players, [$pk]);
+		$this->broadcastPacket($players, $pk);
 	}
 
 	/**
 	 * @param Player[] $players
 	 */
 	protected function sendAttributesPacket(array $players): void
-	{
+	{//TODO might not be needed anymore
+		if ($this->entityId === null) return;
 		$pk = new UpdateAttributesPacket();
 		$pk->entityRuntimeId = $this->entityId;
 		$pk->entries = $this->getAttributeMap()->needSend();
 		Server::getInstance()->broadcastPackets($players, [$pk]);
-	}
-
-	/**
-	 * @param Player[] $players
-	 * @deprecated
-	 * @internal
-	 */
-	protected function sendEntityDataPacket(array $players): void
-	{
-//		$this->getPropertyManager()->setString(Entity::DATA_NAMETAG, $this->getFullTitle());
-//		$pk = new SetActorDataPacket();
-//		$pk->metadata = $this->getPropertyManager()->getDirty();
-//		$pk->entityRuntimeId = $this->entityId;
-//		Server::getInstance()->broadcastPackets($players, [$pk]);
-//
-//		$this->getPropertyManager()->clearDirtyProperties();
 	}
 
 	/**
@@ -389,7 +350,7 @@ class BossBar
 		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		$pk->healthPercent = $this->getPercentage();
-		Server::getInstance()->broadcastPackets($players, [$pk]);
+		$this->broadcastPacket($players, $pk);
 	}
 
 	private function addDefaults(BossEventPacket $pk): BossEventPacket
@@ -425,6 +386,19 @@ class BossBar
 	protected function getPropertyManager(): EntityMetadataCollection
 	{
 		return $this->propertyManager;
+	}
+
+	/**
+	 * @param Player[] $players
+	 * @param BossEventPacket $pk
+	 * @throws InvalidArgumentException
+	 */
+	private function broadcastPacket(array $players, BossEventPacket $pk)
+	{
+		foreach ($players as $player) {
+			$pk->bossEid = $player->getId();
+			$player->getNetworkSession()->sendDataPacket($pk);
+		}
 	}
 
 	//TODO callable on client2server register/unregister request
