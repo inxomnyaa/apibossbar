@@ -27,6 +27,7 @@ class DiverseBossBar extends BossBar
 	/**
 	 * DiverseBossBar constructor.
 	 * @see BossBar::__construct
+	 * TODO might be useless, remove?
 	 */
 	public function __construct()
 	{
@@ -131,7 +132,7 @@ class DiverseBossBar extends BossBar
 	 */
 	public function setPercentageFor(array $players, float $percentage): DiverseBossBar
 	{
-		$percentage = (float)max(0.00, $percentage);
+		$percentage = (float)min(1.0, max(0.00, $percentage));
 		foreach ($players as $player) {
 			$this->getAttributeMap($player)->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap($player)->get(Attribute::HEALTH)->getMaxValue(), true, true);
 		}
@@ -161,7 +162,7 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			$pk->bossEid = $this->entityId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, clone $pk));
+			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
 	}
 
@@ -174,8 +175,6 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			$pk->bossEid = $this->entityId ?? $player->getId();
-			$pk->title = $this->getFullTitleFor($player);
-			$pk->healthPercent = $this->getPercentageFor($player);
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
 	}
@@ -235,14 +234,15 @@ class DiverseBossBar extends BossBar
 	public function getAttributeMap(Player $player = null): AttributeMap
 	{
 		if ($player instanceof Player) {
-			$attributeMap = $this->attributeMaps[$player->getId()] ?? parent::getAttributeMap();
-		} else $attributeMap = parent::getAttributeMap();
-		return $attributeMap;
+			return $this->attributeMaps[$player->getId()] ?? parent::getAttributeMap();
+		}
+		return parent::getAttributeMap();
 	}
 
 	public function getPropertyManager(Player $player = null): EntityMetadataCollection
 	{
-		$propertyManager = clone $this->propertyManager;//TODO check if memleak
+		$propertyManager = /*clone*/
+			$this->propertyManager;//TODO check if memleak
 		if ($player instanceof Player) $propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitleFor($player));
 		else $propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitle());
 		return $propertyManager;

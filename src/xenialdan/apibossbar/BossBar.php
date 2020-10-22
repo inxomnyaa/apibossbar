@@ -38,7 +38,6 @@ class BossBar
 	 */
 	public function __construct()
 	{
-		$this->entityId = Entity::nextRuntimeId();
 		$this->attributeMap = new AttributeMap();
 		$this->getAttributeMap()->add(AttributeFactory::getInstance()->mustGet(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
 		$this->propertyManager = new EntityMetadataCollection();
@@ -188,7 +187,7 @@ class BossBar
 	 */
 	public function setPercentage(float $percentage): BossBar
 	{
-		$percentage = (float)max(0.0, $percentage);
+		$percentage = (float)min(1.0,max(0.0, $percentage));
 		$this->getAttributeMap()->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap()->get(Attribute::HEALTH)->getMaxValue(), true, true);
 		#$this->sendAttributesPacket($this->getPlayers());
 		$this->sendBossHealthPacket($this->getPlayers());
@@ -235,7 +234,10 @@ class BossBar
 	{
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
-		$this->broadcastPacket($players, $this->addDefaults($pk));
+		foreach ($players as $player) {
+			$pk->bossEid = $this->entityId ?? $player->getId();
+			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
+		}
 	}
 
 	/**
@@ -300,11 +302,11 @@ class BossBar
 	protected function sendBossPacket(array $players): void
 	{
 		$pk = new BossEventPacket();
-		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
-		$pk->title = $this->getFullTitle();
-		$pk->healthPercent = $this->getPercentage();
-		$this->broadcastPacket($players, $this->addDefaults($pk));
+		foreach ($players as $player) {
+			$pk->bossEid = $this->entityId ?? $player->getId();
+			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
+		}
 	}
 
 	/**
@@ -326,7 +328,10 @@ class BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		$pk->title = $this->getFullTitle();
-		$this->broadcastPacket($players, $pk);
+		foreach ($players as $player) {
+			$pk->bossEid = $this->entityId ?? $player->getId();
+			$player->getNetworkSession()->sendDataPacket($pk);
+		}
 	}
 
 	/**
@@ -347,10 +352,12 @@ class BossBar
 	protected function sendBossHealthPacket(array $players): void
 	{
 		$pk = new BossEventPacket();
-		$pk->bossEid = $this->entityId;
 		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		$pk->healthPercent = $this->getPercentage();
-		$this->broadcastPacket($players, $pk);
+		foreach ($players as $player) {
+			$pk->bossEid = $this->entityId ?? $player->getId();
+			$player->getNetworkSession()->sendDataPacket($pk);
+		}
 	}
 
 	private function addDefaults(BossEventPacket $pk): BossEventPacket
