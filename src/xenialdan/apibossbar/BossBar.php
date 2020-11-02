@@ -235,6 +235,7 @@ class BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
 		}
@@ -304,6 +305,7 @@ class BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
 		}
@@ -329,6 +331,7 @@ class BossBar
 		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		$pk->title = $this->getFullTitle();
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}
@@ -355,6 +358,7 @@ class BossBar
 		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		$pk->healthPercent = $this->getPercentage();
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}
@@ -403,6 +407,7 @@ class BossBar
 	private function broadcastPacket(array $players, BossEventPacket $pk)
 	{
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $player->getId();
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}

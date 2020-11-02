@@ -161,6 +161,7 @@ class DiverseBossBar extends BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
@@ -174,6 +175,7 @@ class DiverseBossBar extends BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
@@ -187,6 +189,7 @@ class DiverseBossBar extends BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$pk->title = $this->getFullTitleFor($player);
 			$player->getNetworkSession()->sendDataPacket($pk);
@@ -202,6 +205,7 @@ class DiverseBossBar extends BossBar
 		$pk = new UpdateAttributesPacket();
 		$pk->entityRuntimeId = $this->entityId;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->entries = $this->getAttributeMap($player)->needSend();
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}
@@ -215,6 +219,7 @@ class DiverseBossBar extends BossBar
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		foreach ($players as $player) {
+			if(!$player->isConnected()) continue;
 			$pk->bossEid = $this->entityId ?? $player->getId();
 			$pk->healthPercent = $this->getPercentageFor($player);
 			$player->getNetworkSession()->sendDataPacket($pk);
