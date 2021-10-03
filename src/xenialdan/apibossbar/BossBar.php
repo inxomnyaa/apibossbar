@@ -314,7 +314,6 @@ class BossBar
         $pk->entityRuntimeId = $this->entityId;
         $pk->type = AddActorPacket::LEGACY_ID_MAP_BC[$this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID];
         $pk->attributes = $this->getAttributeMap()->getAll();
-        var_dump($this->getPropertyManager()->getAll());
         $pk->metadata = $this->getPropertyManager()->getAll();
         foreach ($players as $player) {
             $pkc = clone $pk;
