@@ -11,8 +11,7 @@ use pocketmine\Server;
 
 class PacketListener implements Listener
 {
-	/** @var Plugin|null */
-	private static $registrant;
+	private static ?Plugin $registrant;
 
 	public static function isRegistered(): bool
 	{
@@ -29,9 +28,6 @@ class PacketListener implements Listener
 		self::$registrant = null;
 	}
 
-	/**
-	 * @param Plugin $plugin
-	 */
 	public static function register(Plugin $plugin): void
 	{
 		if (self::isRegistered()) {
@@ -54,10 +50,10 @@ class PacketListener implements Listener
 		switch ($pk->eventType) {
 			case BossEventPacket::TYPE_REGISTER_PLAYER:
 			case BossEventPacket::TYPE_UNREGISTER_PLAYER:
-				Server::getInstance()->getLogger()->debug("Got BossEventPacket " . ($pk->eventType === BossEventPacket::TYPE_REGISTER_PLAYER ? "" : "un") . "register by client for player id " . $pk->playerEid);
+				Server::getInstance()->getLogger()->debug("Got BossEventPacket " . ($pk->eventType === BossEventPacket::TYPE_REGISTER_PLAYER ? "" : "un") . "register by client for player id " . $pk->playerActorUniqueId);
 				break;
 			default:
-				$e->getPlayer()->kick("Invalid packet received", false);
+				$e->getOrigin()->getPlayer()->kick("Invalid packet received", false);
 		}
 	}
 

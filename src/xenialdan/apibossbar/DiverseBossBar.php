@@ -19,10 +19,10 @@ use pocketmine\player\Player;
  */
 class DiverseBossBar extends BossBar
 {
-	private $titles = [];
-	private $subTitles = [];
+	private array $titles = [];
+	private array $subTitles = [];
 	/** @var AttributeMap[] */
-	private $attributeMaps = [];
+	private array $attributeMaps = [];
 
 	/**
 	 * DiverseBossBar constructor.
@@ -162,7 +162,7 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossEid = $this->entityId ?? $player->getId();
+			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
 	}
@@ -176,7 +176,7 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossEid = $this->entityId ?? $player->getId();
+			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
 			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
 		}
 	}
@@ -190,7 +190,7 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossEid = $this->entityId ?? $player->getId();
+			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
 			$pk->title = $this->getFullTitleFor($player);
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}
@@ -201,9 +201,9 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendAttributesPacket(array $players): void
 	{//TODO might not be needed anymore
-		if ($this->entityId === null) return;
+		if ($this->actorId === null) return;
 		$pk = new UpdateAttributesPacket();
-		$pk->entityRuntimeId = $this->entityId;
+		$pk->actorRuntimeId = $this->actorId;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
 			$pk->entries = $this->getAttributeMap($player)->needSend();
@@ -220,7 +220,7 @@ class DiverseBossBar extends BossBar
 		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossEid = $this->entityId ?? $player->getId();
+			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
 			$pk->healthPercent = $this->getPercentageFor($player);
 			$player->getNetworkSession()->sendDataPacket($pk);
 		}
@@ -253,11 +253,8 @@ class DiverseBossBar extends BossBar
 		return $propertyManager;
 	}
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
-		return __CLASS__ . " ID: $this->entityId, Titles: " . count($this->titles) . ", Subtitles: " . count($this->subTitles) . " [Defaults: " . parent::__toString() . "]";
+		return __CLASS__ . " ID: $this->actorId, Titles: " . count($this->titles) . ", Subtitles: " . count($this->subTitles) . " [Defaults: " . parent::__toString() . "]";
 	}
 }
