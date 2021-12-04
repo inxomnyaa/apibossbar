@@ -194,7 +194,7 @@ class BossBar
 	}
 
 	/**
-	 * @param int $color 0-5
+	 * @param int $color 0-6
 	 * @return $this
 	 */
 	public function setColor(int $color): BossBar
