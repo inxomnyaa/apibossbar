@@ -23,6 +23,7 @@ class BossBar
 	private array $players = [];
 	private string $title = "";
 	private string $subTitle = "";
+	private int $color = 0;
 	public ?int $actorId = null;
 	private AttributeMap $attributeMap;
 	protected EntityMetadataCollection $propertyManager;
@@ -190,6 +191,24 @@ class BossBar
 	public function getPercentage(): float
 	{
 		return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue() / 100;
+	}
+
+	/**
+	 * @param int $color 0-5
+	 * @return $this
+	 */
+	public function setColor(int $color): BossBar
+	{
+		$this->color = $color;
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getColor(): int
+	{
+		return $this->color;
 	}
 
 	/**
@@ -361,7 +380,7 @@ class BossBar
 		$pk->title = $this->getFullTitle();
 		$pk->healthPercent = $this->getPercentage();
 		$pk->unknownShort = 1;
-		$pk->color = 0;//Does not function anyways
+		$pk->color = $this->getColor();
 		$pk->overlay = 0;//Neither. Typical for Mojang: Copy-pasted from Java edition
 		return $pk;
 	}
