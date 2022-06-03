@@ -26,6 +26,8 @@ class BossBar
 	public ?int $actorId = null;
 	private AttributeMap $attributeMap;
 	protected EntityMetadataCollection $propertyManager;
+	
+        public int $color = 0;
 
 	/**
 	 * BossBar constructor.
