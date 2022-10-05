@@ -61,9 +61,8 @@ class BossBar
 	 * @param Player[] $players
 	 * @return BossBar
 	 */
-	public function addPlayers(array $players): BossBar
-	{
-		foreach ($players as $player) {
+	public function addPlayers(array $players) : self{
+		foreach($players as $player){
 			$this->addPlayer($player);
 		}
 		return $this;
@@ -73,9 +72,8 @@ class BossBar
 	 * @param Player $player
 	 * @return BossBar
 	 */
-	public function addPlayer(Player $player): BossBar
-	{
-		if (isset($this->players[$player->getId()])) return $this;
+	public function addPlayer(Player $player) : self{
+		if(isset($this->players[$player->getId()])) return $this;
 		#if (!$this->getEntity() instanceof Player) $this->sendSpawnPacket([$player]);
 		$this->sendBossPacket([$player]);
 		$this->players[$player->getId()] = $player;
@@ -88,9 +86,8 @@ class BossBar
 	 * @return BossBar
 	 * @see BossBar::hideFrom() when just removing temporarily to save some performance / bandwidth
 	 */
-	public function removePlayer(Player $player): BossBar
-	{
-		if (!isset($this->players[$player->getId()])) {
+	public function removePlayer(Player $player) : self{
+		if(!isset($this->players[$player->getId()])){
 			GlobalLogger::get()->debug("Removed player that was not added to the boss bar (" . $this . ")");
 			return $this;
 		}
@@ -103,9 +100,8 @@ class BossBar
 	 * @param Player[] $players
 	 * @return BossBar
 	 */
-	public function removePlayers(array $players): BossBar
-	{
-		foreach ($players as $player) {
+	public function removePlayers(array $players) : self{
+		foreach($players as $player){
 			$this->removePlayer($player);
 		}
 		return $this;
@@ -115,9 +111,8 @@ class BossBar
 	 * Removes all players from this bar
 	 * @return BossBar
 	 */
-	public function removeAllPlayers(): BossBar
-	{
-		foreach ($this->getPlayers() as $player) $this->removePlayer($player);
+	public function removeAllPlayers() : self{
+		foreach($this->getPlayers() as $player) $this->removePlayer($player);
 		return $this;
 	}
 
@@ -135,8 +130,7 @@ class BossBar
 	 * @param string $title
 	 * @return BossBar
 	 */
-	public function setTitle(string $title = ""): BossBar
-	{
+	public function setTitle(string $title = "") : self{
 		$this->title = $title;
 		$this->sendBossTextPacket($this->getPlayers());
 		return $this;
@@ -152,8 +146,7 @@ class BossBar
 	 * @param string $subTitle
 	 * @return BossBar
 	 */
-	public function setSubTitle(string $subTitle = ""): BossBar
-	{
+	public function setSubTitle(string $subTitle = "") : self{
 		$this->subTitle = $subTitle;
 		#$this->sendEntityDataPacket($this->getPlayers());
 		$this->sendBossTextPacket($this->getPlayers());
@@ -177,9 +170,8 @@ class BossBar
 	 * @param float $percentage 0-1
 	 * @return BossBar
 	 */
-	public function setPercentage(float $percentage): BossBar
-	{
-		$percentage = (float)min(1.0, max(0.0, $percentage));
+	public function setPercentage(float $percentage) : self{
+		$percentage = (float) min(1.0, max(0.0, $percentage));
 		$this->getAttributeMap()->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap()->get(Attribute::HEALTH)->getMaxValue(), true, true);
 		#$this->sendAttributesPacket($this->getPlayers());
 		$this->sendBossHealthPacket($this->getPlayers());
@@ -253,16 +245,15 @@ class BossBar
 	 * @return BossBar
 	 * TODO: use attributes and properties of the custom entity
 	 */
-	public function setEntity(?Entity $entity = null): BossBar
-	{
-		if ($entity instanceof Entity && ($entity->isClosed() || $entity->isFlaggedForDespawn())) throw new InvalidArgumentException("Entity $entity can not be used since its not valid anymore (closed or flagged for despawn)");
-		if ($this->getEntity() instanceof Entity && !$entity instanceof Player) $this->getEntity()->flagForDespawn();
-		else {
+	public function setEntity(?Entity $entity = null) : self{
+		if($entity instanceof Entity && ($entity->isClosed() || $entity->isFlaggedForDespawn())) throw new InvalidArgumentException("Entity $entity can not be used since its not valid anymore (closed or flagged for despawn)");
+		if($this->getEntity() instanceof Entity && !$entity instanceof Player) $this->getEntity()->flagForDespawn();
+		else{
 			$pk = new RemoveActorPacket();
 			$pk->actorUniqueId = $this->actorId;
 			Server::getInstance()->broadcastPackets($this->getPlayers(), [$pk]);
 		}
-		if ($entity instanceof Entity) {
+		if($entity instanceof Entity){
 			$this->actorId = $entity->getId();
 			$this->attributeMap = $entity->getAttributeMap();//TODO try some kind of auto-updating reference
 			$this->getAttributeMap()->add($entity->getAttributeMap()->get(Attribute::HEALTH));//TODO Auto-update bar for entity? Would be cool, so the api can be used for actual bosses
@@ -280,9 +271,8 @@ class BossBar
 	 * @param bool $removeEntity Be careful with this. If set to true, the entity will be deleted.
 	 * @return BossBar
 	 */
-	public function resetEntity(bool $removeEntity = false): BossBar
-	{
-		if ($removeEntity && $this->getEntity() instanceof Entity && !$this->getEntity() instanceof Player) $this->getEntity()->close();
+	public function resetEntity(bool $removeEntity = false) : self{
+		if($removeEntity && $this->getEntity() instanceof Entity && !$this->getEntity() instanceof Player) $this->getEntity()->close();
 		return $this->setEntity();
 	}
 
