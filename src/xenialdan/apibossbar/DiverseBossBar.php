@@ -23,6 +23,7 @@ class DiverseBossBar extends BossBar
 	private array $subTitles = [];
 	/** @var AttributeMap[] */
 	private array $attributeMaps = [];
+	private array $colors = [];
 
 	/**
 	 * DiverseBossBar constructor.
@@ -34,12 +35,7 @@ class DiverseBossBar extends BossBar
 		parent::__construct();
 	}
 
-	/**
-	 * @param Player $player
-	 * @return BossBar
-	 */
-	public function addPlayer(Player $player): BossBar
-	{
+	public function addPlayer(Player $player) : static{
 		$this->attributeMaps[$player->getId()] = clone parent::getAttributeMap();
 		return parent::addPlayer($player);
 	}
@@ -47,26 +43,23 @@ class DiverseBossBar extends BossBar
 	/**
 	 * Removes a single player from this bar.
 	 * Use @param Player $player
-	 * @return BossBar
+	 * @return static
 	 * @see BossBar::hideFrom() when just removing temporarily to save some performance / bandwidth
 	 */
-	public function removePlayer(Player $player): BossBar
-	{
+	public function removePlayer(Player $player) : static{
 		unset($this->attributeMaps[$player->getId()]);
 		return parent::removePlayer($player);
 	}
 
-	public function resetFor(Player $player): DiverseBossBar
-	{
-		unset($this->attributeMaps[$player->getId()], $this->titles[$player->getId()], $this->subTitles[$player->getId()]);
+	public function resetFor(Player $player) : static{
+		unset($this->attributeMaps[$player->getId()], $this->titles[$player->getId()], $this->subTitles[$player->getId()], $this->colors[$player->getId()]);
 		$this->sendAttributesPacket([$player]);
 		$this->sendBossPacket([$player]);
 		return $this;
 	}
 
-	public function resetForAll(): DiverseBossBar
-	{
-		foreach ($this->getPlayers() as $player) {
+	public function resetForAll() : static{
+		foreach($this->getPlayers() as $player){
 			$this->resetFor($player);
 		}
 		return $this;
@@ -79,12 +72,12 @@ class DiverseBossBar extends BossBar
 
 	/**
 	 * @param Player[] $players
-	 * @param string $title
-	 * @return DiverseBossBar
+	 * @param string   $title
+	 *
+	 * @return static
 	 */
-	public function setTitleFor(array $players, string $title = ""): DiverseBossBar
-	{
-		foreach ($players as $player) {
+	public function setTitleFor(array $players, string $title = "") : static{
+		foreach($players as $player){
 			$this->titles[$player->getId()] = $title;
 			$this->sendBossTextPacket([$player]);
 		}
@@ -98,12 +91,11 @@ class DiverseBossBar extends BossBar
 
 	/**
 	 * @param Player[] $players
-	 * @param string $subTitle
-	 * @return DiverseBossBar
+	 * @param string   $subTitle
+	 * @return static
 	 */
-	public function setSubTitleFor(array $players, string $subTitle = ""): DiverseBossBar
-	{
-		foreach ($players as $player) {
+	public function setSubTitleFor(array $players, string $subTitle = "") : static{
+		foreach($players as $player){
 			$this->subTitles[$player->getId()] = $subTitle;
 			$this->sendBossTextPacket([$player]);
 		}
@@ -127,13 +119,12 @@ class DiverseBossBar extends BossBar
 
 	/**
 	 * @param Player[] $players
-	 * @param float $percentage 0-1
-	 * @return DiverseBossBar
+	 * @param float    $percentage 0-1
+	 * @return static
 	 */
-	public function setPercentageFor(array $players, float $percentage): DiverseBossBar
-	{
-		$percentage = (float)min(1.0, max(0.00, $percentage));
-		foreach ($players as $player) {
+	public function setPercentageFor(array $players, float $percentage) : static{
+		$percentage = (float) min(1.0, max(0.00, $percentage));
+		foreach($players as $player){
 			$this->getAttributeMap($player)->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap($player)->get(Attribute::HEALTH)->getMaxValue(), true, true);
 		}
 		$this->sendAttributesPacket($players);
@@ -142,28 +133,38 @@ class DiverseBossBar extends BossBar
 		return $this;
 	}
 
-	/**
-	 * @param Player $player
-	 * @return float
-	 */
-	public function getPercentageFor(Player $player): float
-	{
+	public function getPercentageFor(Player $player) : float{
 		return $this->getAttributeMap($player)->get(Attribute::HEALTH)->getValue() / 100;
+	}
+
+	/**
+	 * @param Player[] $players
+	 * @param int      $color
+	 *
+	 * @return static
+	 */
+	public function setColorFor(array $players, int $color) : static{
+		foreach($players as $player){
+			$this->colors[$player->getId()] = $color;
+			$this->sendBossPacket([$player]);
+		}
+		return $this;
+	}
+
+	public function getColorFor(Player $player) : int{
+		return $this->colors[$player->getId()] ?? $this->getColor();
 	}
 
 	/**
 	 * TODO: Only registered players validation
 	 * Displays the bar to the specified players
+	 *
 	 * @param Player[] $players
 	 */
-	public function showTo(array $players): void
-	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
+	public function showTo(array $players) : void{
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), 1, $this->getColorFor($player)));
 		}
 	}
 
@@ -172,12 +173,9 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), 1, $this->getColorFor($player)));
 		}
 	}
 
@@ -186,13 +184,9 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossTextPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$pk->title = $this->getFullTitleFor($player);
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::title($this->actorId ?? $player->getId(), $this->getFullTitleFor($player)));
 		}
 	}
 
@@ -216,24 +210,10 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossHealthPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$pk->healthPercent = $this->getPercentageFor($player);
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::healthPercent($this->actorId ?? $player->getId(), $this->getPercentageFor($player)));
 		}
-	}
-
-	private function addDefaults(Player $player, BossEventPacket $pk): BossEventPacket
-	{
-		$pk->title = $this->getFullTitleFor($player);
-		$pk->healthPercent = $this->getPercentageFor($player);
-		$pk->unknownShort = 1;
-		$pk->color = 0;//Does not function anyways
-		$pk->overlay = 0;//neither. Typical for Mojang: Copy-pasted from Java edition
-		return $pk;
 	}
 
 	public function getAttributeMap(Player $player = null): AttributeMap
