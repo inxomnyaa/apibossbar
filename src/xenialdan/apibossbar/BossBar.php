@@ -357,7 +357,7 @@ class BossBar
 		$pk->title = $this->getFullTitle();
 		$pk->healthPercent = $this->getPercentage();
 		$pk->unknownShort = 1;
-		$pk->color = $this->color;
+		$pk->color = $this->getColor();
 		$pk->overlay = 0;//Does not work. Typical for Mojang: Copy-pasted from Java edition
 		return $pk;
 	}
