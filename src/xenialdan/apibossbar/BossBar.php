@@ -188,6 +188,8 @@ class BossBar
 
 	public function setColor(int $color) : static{
 		$this->color = $color;
+		$this->sendBossPacket($this->getPlayers());
+
 		return $this;
 	}
 
@@ -199,12 +201,9 @@ class BossBar
 	 * @param Player[] $players
 	 */
 	public function hideFrom(array $players) : void{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_HIDE;
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::hide($this->actorId ?? $player->getId()));
 		}
 	}
 
@@ -223,13 +222,7 @@ class BossBar
 	 */
 	public function showTo(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
-		foreach ($players as $player) {
-			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
-		}
+		$this->sendBossPacket($players);
 	}
 
 	/**
@@ -288,12 +281,9 @@ class BossBar
 	 */
 	protected function sendBossPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitle(), $this->getPercentage(), 1, $this->getColor()));
 		}
 	}
 
@@ -302,12 +292,9 @@ class BossBar
 	 */
 	protected function sendRemoveBossPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_HIDE;
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::hide($this->actorId ?? $player->getId()));
 		}
 	}
 
@@ -316,13 +303,9 @@ class BossBar
 	 */
 	protected function sendBossTextPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_TITLE;
-		$pk->title = $this->getFullTitle();
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::title($this->actorId ?? $player->getId(), $this->getFullTitle()));
 		}
 	}
 
@@ -343,23 +326,10 @@ class BossBar
 	 */
 	protected function sendBossHealthPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
-		$pk->healthPercent = $this->getPercentage();
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::healthPercent($this->actorId ?? $player->getId(), $this->getPercentage()));
 		}
-	}
-
-	private function addDefaults(BossEventPacket $pk): BossEventPacket{
-		$pk->title = $this->getFullTitle();
-		$pk->healthPercent = $this->getPercentage();
-		$pk->unknownShort = 1;
-		$pk->color = $this->getColor();
-		$pk->overlay = 0;//Does not work. Typical for Mojang: Copy-pasted from Java edition
-		return $pk;
 	}
 
 	public function __toString(): string{

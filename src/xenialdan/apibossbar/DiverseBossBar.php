@@ -162,12 +162,9 @@ class DiverseBossBar extends BossBar
 	 * @param Player[] $players
 	 */
 	public function showTo(array $players) : void{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), 1, $this->getColorFor($player)));
 		}
 	}
 
@@ -176,12 +173,9 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_SHOW;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pk));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), 1, $this->getColorFor($player)));
 		}
 	}
 
@@ -190,13 +184,9 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossTextPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_TITLE;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$pk->title = $this->getFullTitleFor($player);
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::title($this->actorId ?? $player->getId(), $this->getFullTitleFor($player)));
 		}
 	}
 
@@ -220,23 +210,10 @@ class DiverseBossBar extends BossBar
 	 */
 	protected function sendBossHealthPacket(array $players): void
 	{
-		$pk = new BossEventPacket();
-		$pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
 		foreach ($players as $player) {
 			if(!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $this->actorId ?? $player->getId();
-			$pk->healthPercent = $this->getPercentageFor($player);
-			$player->getNetworkSession()->sendDataPacket($pk);
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::healthPercent($this->actorId ?? $player->getId(), $this->getPercentageFor($player)));
 		}
-	}
-
-	private function addDefaults(Player $player, BossEventPacket $pk): BossEventPacket{
-		$pk->title = $this->getFullTitleFor($player);
-		$pk->healthPercent = $this->getPercentageFor($player);
-		$pk->unknownShort = 1;
-		$pk->color = $this->getColorFor($player);
-		$pk->overlay = 0;//Non-functional. Typical for Mojang: Copy-pasted from Java edition
-		return $pk;
 	}
 
 	public function getAttributeMap(Player $player = null): AttributeMap
