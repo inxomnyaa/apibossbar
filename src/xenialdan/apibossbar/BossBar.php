@@ -10,6 +10,7 @@ use pocketmine\entity\AttributeMap;
 use pocketmine\entity\Entity;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
+use pocketmine\network\mcpe\protocol\types\BossBarColor;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
@@ -23,6 +24,7 @@ class BossBar
 	private array $players = [];
 	private string $title = "";
 	private string $subTitle = "";
+	private int $color = BossBarColor::PURPLE;
 	public ?int $actorId = null;
 	private AttributeMap $attributeMap;
 	protected EntityMetadataCollection $propertyManager;
@@ -59,20 +61,17 @@ class BossBar
 
 	/**
 	 * @param Player[] $players
-	 * @return BossBar
+	 *
+	 * @return static
 	 */
-	public function addPlayers(array $players) : self{
+	public function addPlayers(array $players) : static{
 		foreach($players as $player){
 			$this->addPlayer($player);
 		}
 		return $this;
 	}
 
-	/**
-	 * @param Player $player
-	 * @return BossBar
-	 */
-	public function addPlayer(Player $player) : self{
+	public function addPlayer(Player $player) : static{
 		if(isset($this->players[$player->getId()])) return $this;
 		#if (!$this->getEntity() instanceof Player) $this->sendSpawnPacket([$player]);
 		$this->sendBossPacket([$player]);
@@ -83,10 +82,10 @@ class BossBar
 	/**
 	 * Removes a single player from this bar.
 	 * Use @param Player $player
-	 * @return BossBar
+	 * @return static
 	 * @see BossBar::hideFrom() when just removing temporarily to save some performance / bandwidth
 	 */
-	public function removePlayer(Player $player) : self{
+	public function removePlayer(Player $player) : static{
 		if(!isset($this->players[$player->getId()])){
 			GlobalLogger::get()->debug("Removed player that was not added to the boss bar (" . $this . ")");
 			return $this;
@@ -98,9 +97,9 @@ class BossBar
 
 	/**
 	 * @param Player[] $players
-	 * @return BossBar
+	 * @return static
 	 */
-	public function removePlayers(array $players) : self{
+	public function removePlayers(array $players) : static{
 		foreach($players as $player){
 			$this->removePlayer($player);
 		}
@@ -109,9 +108,9 @@ class BossBar
 
 	/**
 	 * Removes all players from this bar
-	 * @return BossBar
+	 * @return static
 	 */
-	public function removeAllPlayers() : self{
+	public function removeAllPlayers() : static{
 		foreach($this->getPlayers() as $player) $this->removePlayer($player);
 		return $this;
 	}
@@ -128,9 +127,9 @@ class BossBar
 	/**
 	 * Text above the bar. Can be empty. Should be single-line
 	 * @param string $title
-	 * @return BossBar
+	 * @return static
 	 */
-	public function setTitle(string $title = "") : self{
+	public function setTitle(string $title = "") : static{
 		$this->title = $title;
 		$this->sendBossTextPacket($this->getPlayers());
 		return $this;
@@ -144,9 +143,9 @@ class BossBar
 	/**
 	 * Optional text below the bar. Can be empty
 	 * @param string $subTitle
-	 * @return BossBar
+	 * @return static
 	 */
-	public function setSubTitle(string $subTitle = "") : self{
+	public function setSubTitle(string $subTitle = "") : static{
 		$this->subTitle = $subTitle;
 		#$this->sendEntityDataPacket($this->getPlayers());
 		$this->sendBossTextPacket($this->getPlayers());
@@ -168,9 +167,9 @@ class BossBar
 
 	/**
 	 * @param float $percentage 0-1
-	 * @return BossBar
+	 * @return static
 	 */
-	public function setPercentage(float $percentage) : self{
+	public function setPercentage(float $percentage) : static{
 		$percentage = (float) min(1.0, max(0.0, $percentage));
 		$this->getAttributeMap()->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap()->get(Attribute::HEALTH)->getMaxValue(), true, true);
 		#$this->sendAttributesPacket($this->getPlayers());
@@ -179,19 +178,27 @@ class BossBar
 		return $this;
 	}
 
-	public function getPercentage(): float
-	{
+	public function getPercentage() : float{
 		return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue() / 100;
+	}
+
+	public function getColor() : int{
+		return $this->color;
+	}
+
+	public function setColor(int $color) : static{
+		$this->color = $color;
+		return $this;
 	}
 
 	/**
 	 * TODO: Only registered players validation
 	 * Hides the bar from the specified players without removing it.
 	 * Useful when saving some bandwidth or when you'd like to keep the entity
+	 *
 	 * @param Player[] $players
 	 */
-	public function hideFrom(array $players): void
-	{
+	public function hideFrom(array $players) : void{
 		$pk = new BossEventPacket();
 		$pk->eventType = BossEventPacket::TYPE_HIDE;
 		foreach ($players as $player) {
@@ -242,10 +249,10 @@ class BossBar
 	/**
 	 * STILL TODO, SHOULD NOT BE USED YET
 	 * @param null|Entity $entity
-	 * @return BossBar
+	 * @return static
 	 * TODO: use attributes and properties of the custom entity
 	 */
-	public function setEntity(?Entity $entity = null) : self{
+	public function setEntity(?Entity $entity = null) : static{
 		if($entity instanceof Entity && ($entity->isClosed() || $entity->isFlaggedForDespawn())) throw new InvalidArgumentException("Entity $entity can not be used since its not valid anymore (closed or flagged for despawn)");
 		if($this->getEntity() instanceof Entity && !$entity instanceof Player) $this->getEntity()->flagForDespawn();
 		else{
@@ -269,9 +276,9 @@ class BossBar
 
 	/**
 	 * @param bool $removeEntity Be careful with this. If set to true, the entity will be deleted.
-	 * @return BossBar
+	 * @return static
 	 */
-	public function resetEntity(bool $removeEntity = false) : self{
+	public function resetEntity(bool $removeEntity = false) : static{
 		if($removeEntity && $this->getEntity() instanceof Entity && !$this->getEntity() instanceof Player) $this->getEntity()->close();
 		return $this->setEntity();
 	}
@@ -346,19 +353,17 @@ class BossBar
 		}
 	}
 
-	private function addDefaults(BossEventPacket $pk): BossEventPacket
-	{
+	private function addDefaults(BossEventPacket $pk): BossEventPacket{
 		$pk->title = $this->getFullTitle();
 		$pk->healthPercent = $this->getPercentage();
 		$pk->unknownShort = 1;
-		$pk->color = 0;//Does not function anyways
-		$pk->overlay = 0;//Neither. Typical for Mojang: Copy-pasted from Java edition
+		$pk->color = $this->color;
+		$pk->overlay = 0;//Does not work. Typical for Mojang: Copy-pasted from Java edition
 		return $pk;
 	}
 
-	public function __toString(): string
-	{
-		return __CLASS__ . " ID: $this->actorId, Players: " . count($this->players) . ", Title: \"$this->title\", Subtitle: \"$this->subTitle\", Percentage: \"" . $this->getPercentage() . "\"";
+	public function __toString(): string{
+		return __CLASS__ . " ID: $this->actorId, Players: " . count($this->players) . ", Title: \"$this->title\", Subtitle: \"$this->subTitle\", Percentage: \"" . $this->getPercentage() . "\", Color: \"" . $this->color . "\"";
 	}
 
 	/**
