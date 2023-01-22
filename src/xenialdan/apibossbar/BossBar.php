@@ -3,22 +3,30 @@
 
 namespace xenialdan\apibossbar;
 
-use pocketmine\entity\Attribute;
 use pocketmine\entity\AttributeMap;
-use pocketmine\entity\DataPropertyManager;
+use pocketmine\entity\Attribute;
+use pocketmine\entity\AttributeFactory;
 use pocketmine\entity\Entity;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
+use pocketmine\network\mcpe\protocol\DataPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
 use pocketmine\network\mcpe\protocol\SetActorDataPacket;
+use pocketmine\network\mcpe\protocol\types\ActorEvent;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
-use pocketmine\utils\MainLogger;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\network\mcpe\protocol\types\entity\EntityLink;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataTypes;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 
 class BossBar
 {
-    protected const NETWORK_ID = Entity::SLIME;
+    protected const NETWORK_ID = EntityIds::SLIME;
 
     /** @var Player[] */
     private $players = [];
@@ -30,13 +38,14 @@ class BossBar
      * @var string
      */
     private $subTitle = "";
+    public $entityCount = 1;
     /**
      * @var int|null
      */
     public $entityId = null;
     /** @var AttributeMap */
     private $attributeMap;
-    /** @var DataPropertyManager */
+    /** @var EntityMetadataCollection */
     protected $propertyManager;
 
     /**
@@ -45,21 +54,22 @@ class BossBar
      */
     public function __construct()
     {
-        $this->entityId = Entity::$entityCount++;
+        $this->entityId = Self::$entityCount++;
         $this->attributeMap = new AttributeMap();
-        $this->getAttributeMap()->addAttribute(Attribute::getAttribute(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
-        $this->propertyManager = new DataPropertyManager();
-        $this->propertyManager->setLong(Entity::DATA_FLAGS, 0
-            ^ 1 << Entity::DATA_FLAG_SILENT
-            ^ 1 << Entity::DATA_FLAG_INVISIBLE
-            ^ 1 << Entity::DATA_FLAG_NO_AI
-            ^ 1 << Entity::DATA_FLAG_FIRE_IMMUNE);
-        $this->propertyManager->setShort(Entity::DATA_MAX_AIR, 400);
-        $this->propertyManager->setString(Entity::DATA_NAMETAG, $this->getFullTitle());
-        $this->propertyManager->setLong(Entity::DATA_LEAD_HOLDER_EID, -1);
-        $this->propertyManager->setFloat(Entity::DATA_SCALE, 0);
-        $this->propertyManager->setFloat(Entity::DATA_BOUNDING_BOX_WIDTH, 0.0);
-        $this->propertyManager->setFloat(Entity::DATA_BOUNDING_BOX_HEIGHT, 0.0);
+        
+        $this->getAttributeMap()->add(AttributeFactory::getInstance()->get(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
+        $this->propertyManager = new EntityMetadataCollection();
+        $this->propertyManager->setLong(EntityMetadataProperties::FLAGS, 0
+            ^ 1 << EntityMetadataFlags::SILENT
+            ^ 1 << EntityMetadataFlags::INVISIBLE
+            ^ 1 << EntityMetadataFlags::NO_AI
+            ^ 1 << EntityMetadataFlags::FIRE_IMMUNE);
+        $this->propertyManager->setShort(EntityMetadataProperties::MAX_AIR, 400);
+        $this->propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitle());
+        $this->propertyManager->setLong(EntityMetadataProperties::LEAD_HOLDER_EID, -1);
+        $this->propertyManager->setFloat(EntityMetadataProperties::SCALE, 0);
+        $this->propertyManager->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
+        $this->propertyManager->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
     }
 
     /**
@@ -104,7 +114,7 @@ class BossBar
     public function removePlayer(Player $player): BossBar
     {
         if (!isset($this->players[$player->getId()])) {
-            MainLogger::getLogger()->debug("Removed player that was not added to the boss bar (" . $this . ")");
+            Server::getInstance()->getLogger()->debug("Removed player that was not added to the boss bar (" . $this . ")");
             return $this;
         }
         $this->sendRemoveBossPacket([$player]);
@@ -198,7 +208,7 @@ class BossBar
     public function setPercentage(float $percentage): BossBar
     {
         $percentage = (float)max(0.0, $percentage);
-        $this->getAttributeMap()->getAttribute(Attribute::HEALTH)->setValue($percentage* $this->getAttributeMap()->getAttribute(Attribute::HEALTH)->getMaxValue(), true, true);
+        $this->getAttributeMap()->get(Attribute::HEALTH)->setValue($percentage* $this->getAttributeMap()->get(Attribute::HEALTH)->getMaxValue(), true, true);
         $this->sendAttributesPacket($this->getPlayers());
         $this->sendBossHealthPacket($this->getPlayers());
 
@@ -210,7 +220,7 @@ class BossBar
      */
     public function getPercentage(): float
     {
-        return $this->getAttributeMap()->getAttribute(Attribute::HEALTH)->getValue()/100;
+        return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue()/100;
     }
 
     /**
@@ -224,7 +234,7 @@ class BossBar
         $pk = new BossEventPacket();
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_HIDE;
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
     }
 
     /**
@@ -245,7 +255,7 @@ class BossBar
         $pk = new BossEventPacket();
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_SHOW;
-        Server::getInstance()->broadcastPacket($players, $this->addDefaults($pk));
+        Server::getInstance()->broadcastPackets($players, [$this->addDefaults($pk)]);
     }
 
     /**
@@ -261,7 +271,7 @@ class BossBar
      */
     public function getEntity(): ?Entity
     {
-        return Server::getInstance()->findEntity($this->entityId);
+        return Server::getInstance()->getWorldManager()->findEntity($this->entityId);
     }
 
     /**
@@ -277,16 +287,16 @@ class BossBar
         else {
             $pk = new RemoveActorPacket();
             $pk->entityUniqueId = $this->entityId;
-            Server::getInstance()->broadcastPacket($this->getPlayers(), $pk);
+            Server::getInstance()->broadcastPackets($this->getPlayers(), [$pk]);
         }
         if ($entity instanceof Entity) {
             $this->entityId = $entity->getId();
             $this->attributeMap = $entity->getAttributeMap();//TODO try some kind of auto-updating reference
-            $this->getAttributeMap()->addAttribute($entity->getAttributeMap()->getAttribute(Attribute::HEALTH));//TODO Auto-update bar for entity? Would be cool, so the api can be used for actual bosses
-            $this->propertyManager = $entity->getDataPropertyManager();
+            $this->getAttributeMap()->add($entity->getAttributeMap()->get(Attribute::HEALTH));//TODO Auto-update bar for entity? Would be cool, so the api can be used for actual bosses
+            $this->propertyManager = $entity->getNetworkProperties();
             if(!$entity instanceof Player) $entity->despawnFromAll();
         } else {
-            $this->entityId = Entity::$entityCount++;
+            $this->entityId = self::$entityCount++;
         }
         if(!$entity instanceof Player) $this->sendSpawnPacket($this->getPlayers());
         $this->sendBossPacket($this->getPlayers());
@@ -312,14 +322,14 @@ class BossBar
     {
         $pk = new AddActorPacket();
         $pk->entityRuntimeId = $this->entityId;
-        $pk->type = AddActorPacket::LEGACY_ID_MAP_BC[$this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID];
+        $pk->type = $this->getEntity()->getNetworkTypeId();
         $pk->attributes = $this->getAttributeMap()->getAll();
         var_dump($this->getPropertyManager()->getAll());
         $pk->metadata = $this->getPropertyManager()->getAll();
         foreach ($players as $player) {
             $pkc = clone $pk;
-            $pkc->position = $player->asVector3()->subtract(0, 28);
-            $player->dataPacket($pkc);
+            $pkc->position = $player->getPosition()->asVector3()->subtract(0, 28, 0);
+            $player->getNetworkSession()->sendDataPacket($pk);
         }
     }
 
@@ -333,7 +343,7 @@ class BossBar
         $pk->eventType = BossEventPacket::TYPE_SHOW;
         $pk->title = $this->getFullTitle();
         $pk->healthPercent = $this->getPercentage();
-        Server::getInstance()->broadcastPacket($players, $this->addDefaults($pk));
+        Server::getInstance()->broadcastPackets($players, [$this->addDefaults($pk)]);
     }
 
     /**
@@ -344,7 +354,7 @@ class BossBar
         $pk = new BossEventPacket();
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_HIDE;
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
     }
 
     /**
@@ -356,7 +366,7 @@ class BossBar
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_TITLE;
         $pk->title = $this->getFullTitle();
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
     }
 
     /**
@@ -367,7 +377,7 @@ class BossBar
         $pk = new UpdateAttributesPacket();
         $pk->entityRuntimeId = $this->entityId;
         $pk->entries = $this->getAttributeMap()->needSend();
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
     }
 
     /**
@@ -377,11 +387,11 @@ class BossBar
     protected function sendEntityDataPacket(array $players): void
     {
         return;
-        $this->getPropertyManager()->setString(Entity::DATA_NAMETAG, $this->getFullTitle());
+        $this->getPropertyManager()->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitle());
         $pk = new SetActorDataPacket();
         $pk->metadata = $this->getPropertyManager()->getDirty();
         $pk->entityRuntimeId = $this->entityId;
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
 
         $this->getPropertyManager()->clearDirtyProperties();
     }
@@ -395,7 +405,7 @@ class BossBar
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_HEALTH_PERCENT;
         $pk->healthPercent = $this->getPercentage();
-        Server::getInstance()->broadcastPacket($players, $pk);
+        Server::getInstance()->broadcastPackets($players, [$pk]);
     }
 
     private function addDefaults(BossEventPacket $pk):BossEventPacket{
@@ -427,7 +437,7 @@ class BossBar
     /**
      * @return DataPropertyManager
      */
-    protected function getPropertyManager(): DataPropertyManager
+    protected function getPropertyManager(): EntityMetadataCollection
     {
         return $this->propertyManager;
     }

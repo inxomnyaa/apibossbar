@@ -38,7 +38,7 @@ class PacketListener implements Listener
         }
 
         self::$registrant = $plugin;
-        $plugin->getServer()->getPluginManager()->registerEvents(new self, $plugin);
+        Server::getInstance()->getPluginManager()->registerEvents(new self, $plugin);
     }
 
     public function onDataPacketReceiveEvent(DataPacketReceiveEvent $e)
@@ -56,7 +56,7 @@ class PacketListener implements Listener
                 Server::getInstance()->getLogger()->debug("Got BossEventPacket " . ($pk->eventType === BossEventPacket::TYPE_REGISTER_PLAYER ? "" : "un") . "register by client for player id " . $pk->playerEid);
                 break;
             default:
-                $e->getPlayer()->kick("Invalid packet received", false);
+                $e->getOrigin()->getPlayer()->kick("Invalid packet received", false);
         }
     }
 

@@ -6,13 +6,13 @@ namespace xenialdan\apibossbar;
 
 use pocketmine\entity\Attribute;
 use pocketmine\entity\AttributeMap;
-use pocketmine\entity\DataPropertyManager;
-use pocketmine\entity\Entity;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\SetActorDataPacket;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
-use pocketmine\Player;
+use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
+use pocketmine\player\Player;
 
 /**
  * Class DiverseBossBar
@@ -138,7 +138,7 @@ class DiverseBossBar extends BossBar
     {
         $percentage = (float)max(0.00, $percentage);
         foreach ($players as $player) {
-            $this->getAttributeMap($player)->getAttribute(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap($player)->getAttribute(Attribute::HEALTH)->getMaxValue(), true, true);
+            $this->getAttributeMap($player)->get(Attribute::HEALTH)->setValue($percentage * $this->getAttributeMap($player)->get(Attribute::HEALTH)->getMaxValue(), true, true);
         }
         $this->sendAttributesPacket($players);
         $this->sendBossHealthPacket($players);
@@ -152,7 +152,7 @@ class DiverseBossBar extends BossBar
      */
     public function getPercentageFor(Player $player): float
     {
-        return $this->getAttributeMap($player)->getAttribute(Attribute::HEALTH)->getValue() / 100;
+        return $this->getAttributeMap($player)->get(Attribute::HEALTH)->getValue() / 100;
     }
 
     /**
@@ -166,7 +166,7 @@ class DiverseBossBar extends BossBar
         $pk->bossEid = $this->entityId;
         $pk->eventType = BossEventPacket::TYPE_SHOW;
         foreach ($players as $player) {
-            $player->sendDataPacket($this->addDefaults($player, clone $pk));
+            $player->getNetworkSession()->sendDataPacket($this->addDefaults($player, clone $pk));
         }
     }
 
@@ -178,14 +178,14 @@ class DiverseBossBar extends BossBar
     {
         $pk = new AddActorPacket();
         $pk->entityRuntimeId = $this->entityId;
-        $pk->type = AddActorPacket::LEGACY_ID_MAP_BC[$this->getEntity() instanceof Entity ? $this->getEntity()::NETWORK_ID : static::NETWORK_ID];
+        $pk->type = $this->getEntity()->getNetworkTypeId();
         foreach ($players as $player) {
             $pkc = clone $pk;
             $pkc->attributes = $this->getAttributeMap($player)->getAll();
             $pkc->metadata = $this->getPropertyManager($player)->getAll();
             #var_dump($this->getPropertyManager()->getAll());
-            $pkc->position = $player->asVector3()->subtract(0, 28);
-            $player->dataPacket($pkc);
+            $pkc->position = $player->getPosition()->asVector3()->subtract(0, 28, 0);
+            $player->getNetworkSession()->sendDataPacket($pkc);
         }
     }
 
@@ -201,7 +201,7 @@ class DiverseBossBar extends BossBar
             $pkc = clone $pk;
             $pkc->title = $this->getFullTitleFor($player);
             $pkc->healthPercent = $this->getPercentageFor($player);
-            $player->dataPacket($this->addDefaults($player, $pkc));
+            $player->getNetworkSession()->sendDataPacket($this->addDefaults($player, $pkc));
         }
     }
 
@@ -216,7 +216,7 @@ class DiverseBossBar extends BossBar
         foreach ($players as $player) {
             $pkc = clone $pk;
             $pkc->title = $this->getFullTitleFor($player);
-            $player->dataPacket($pkc);
+            $player->getNetworkSession()->sendDataPacket($pkc);
         }
     }
 
@@ -230,7 +230,7 @@ class DiverseBossBar extends BossBar
         foreach ($players as $player) {
             $pkc = clone $pk;
             $pk->entries = $this->getAttributeMap($player)->needSend();
-            $player->dataPacket($pkc);
+            $player->getNetworkSession()->sendDataPacket($pkc);
         }
     }
 
@@ -245,7 +245,7 @@ class DiverseBossBar extends BossBar
             //$this->getPropertyManager($player)->setString(Entity::DATA_NAMETAG, $this->getFullTitleFor($player));
             $pkc = clone $pk;
             $pkc->metadata = $this->getPropertyManager($player)->getDirty();
-            $player->dataPacket($pkc);
+            $player->getNetworkSession()->sendDataPacket($pkc);
 
             //$this->getPropertyManager($player)->clearDirtyProperties();
         }
@@ -262,7 +262,7 @@ class DiverseBossBar extends BossBar
         foreach ($players as $player) {
             $pkc = clone $pk;
             $pkc->healthPercent = $this->getPercentageFor($player);
-            $player->dataPacket($pkc);
+            $player->getNetworkSession()->sendDataPacket($pkc);
         }
     }
 
@@ -284,11 +284,11 @@ class DiverseBossBar extends BossBar
         return $attributeMap;
     }
 
-    public function getPropertyManager(Player $player = null): DataPropertyManager
+    public function getPropertyManager(Player $player = null): EntityMetadataCollection
     {
         $propertyManager = clone $this->propertyManager;//TODO check if memleak
-        if ($player instanceof Player) $propertyManager->setString(Entity::DATA_NAMETAG, $this->getFullTitleFor($player));
-        else $propertyManager->setString(Entity::DATA_NAMETAG, $this->getFullTitle());
+        if ($player instanceof Player) $propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitleFor($player));
+        else $propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitle());
         return $propertyManager;
     }
 
