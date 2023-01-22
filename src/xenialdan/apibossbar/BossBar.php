@@ -49,7 +49,7 @@ class BossBar
      */
     public function __construct()
     {
-        $this->entityId = Self::$entityCount++;
+        $this->entityId = self::$entityCount++;
         $this->attributeMap = new AttributeMap();
         
         $this->getAttributeMap()->add(AttributeFactory::getInstance()->get(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
