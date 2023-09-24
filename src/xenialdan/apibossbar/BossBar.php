@@ -8,6 +8,7 @@ use pocketmine\entity\Attribute;
 use pocketmine\entity\AttributeFactory;
 use pocketmine\entity\AttributeMap;
 use pocketmine\entity\Entity;
+use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
 use pocketmine\network\mcpe\protocol\types\BossBarColor;
@@ -33,10 +34,11 @@ class BossBar
 	 * BossBar constructor.
 	 * This will not spawn the bar, since there would be no players to spawn it to
 	 */
-	public function __construct()
-	{
+	public function __construct(){
 		$this->attributeMap = new AttributeMap();
-		$this->getAttributeMap()->add(AttributeFactory::getInstance()->mustGet(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
+		/** @var AttributeFactory $attributeFactory */
+		$attributeFactory = AttributeFactory::getInstance();
+		$this->getAttributeMap()->add($attributeFactory->mustGet(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
 		$this->propertyManager = new EntityMetadataCollection();
 		$this->propertyManager->setLong(EntityMetadataProperties::FLAGS, 0
 			^ 1 << EntityMetadataFlags::SILENT
@@ -251,14 +253,14 @@ class BossBar
 		else{
 			$pk = new RemoveActorPacket();
 			$pk->actorUniqueId = $this->actorId;
-			Server::getInstance()->broadcastPackets($this->getPlayers(), [$pk]);
+			NetworkBroadcastUtils::broadcastPackets($this->getPlayers(), [$pk]);
 		}
 		if($entity instanceof Entity){
 			$this->actorId = $entity->getId();
 			$this->attributeMap = $entity->getAttributeMap();//TODO try some kind of auto-updating reference
 			$this->getAttributeMap()->add($entity->getAttributeMap()->get(Attribute::HEALTH));//TODO Auto-update bar for entity? Would be cool, so the api can be used for actual bosses
 			$this->propertyManager = $entity->getNetworkProperties();
-			if (!$entity instanceof Player) $entity->despawnFromAll();
+			if(!$entity instanceof Player) $entity->despawnFromAll();//TODO figure out why this is even here
 		} else {
 			$this->actorId = Entity::nextRuntimeId();
 		}
@@ -283,7 +285,7 @@ class BossBar
 	{
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitle(), $this->getPercentage(), 1, $this->getColor()));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitle(), $this->getPercentage(), false, $this->getColor()));
 		}
 	}
 
@@ -318,7 +320,7 @@ class BossBar
 		$pk = new UpdateAttributesPacket();
 		$pk->actorRuntimeId = $this->actorId;
 		$pk->entries = $this->getAttributeMap()->needSend();
-		Server::getInstance()->broadcastPackets($players, [$pk]);
+		NetworkBroadcastUtils::broadcastPackets($players, [$pk]);
 	}
 
 	/**
@@ -348,20 +350,6 @@ class BossBar
 	protected function getPropertyManager(): EntityMetadataCollection
 	{
 		return $this->propertyManager;
-	}
-
-	/**
-	 * @param Player[] $players
-	 * @param BossEventPacket $pk
-	 * @throws InvalidArgumentException
-	 */
-	private function broadcastPacket(array $players, BossEventPacket $pk)
-	{
-		foreach ($players as $player) {
-			if (!$player->isConnected()) continue;
-			$pk->bossActorUniqueId = $player->getId();
-			$player->getNetworkSession()->sendDataPacket($pk);
-		}
 	}
 
 	//TODO callable on client2server register/unregister request
