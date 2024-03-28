@@ -184,16 +184,21 @@ class BossBar
 		return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue() / 100;
 	}
 
-	public function getColor() : int{
-		return $this->color;
-	}
+	public function getColor(): int
+        {
+            return $this->color;
+        }
 
-	public function setColor(int $color) : static{
-		$this->color = $color;
-		$this->sendBossPacket($this->getPlayers());
+	public function setColor(int $color): static
+        {
+            if (!in_array($color, BarColor::getColors(), true)) {
+                throw new \InvalidArgumentException("Invalid color specified.");
+            }
 
-		return $this;
-	}
+            $this->color = $color;
+            $this->sendBossPacket($this->getPlayers());
+            return $this;
+        }
 
 	/**
 	 * TODO: Only registered players validation
