@@ -1,0 +1,18 @@
+{
+  "name": "inxomnyaa/apibossbar",
+  "description": "A simple virion API for Minecraft Bossbars for PocketMine-MP",
+  "type": "library",
+  "license": "GPL-3.0-or-later",
+  "autoload": {
+    "classmap": ["src"]
+  },
+  "require": {
+    "pocketmine/pocketmine-mp": "^5.0.0"
+  },
+  "extra": {
+    "virion":{
+      "spec": "3.0",
+      "namespace-root": "xenialdan\\apibossbar"
+    }
+  }
+}
