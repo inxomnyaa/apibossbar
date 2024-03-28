@@ -27,6 +27,12 @@ Set the title and/or subtitle
 $bar->setTitle(string $title = "");
 $bar->setSubTitle(string $subTitle = "");
 ```
+Set the color
+```php
+// Available Colors:
+// RED, PINK, BLUE, GREEN, YELLOW, PURPLE, REBECCA_PURPLE and WHITE
+$bar->setColor(BarColor::RED);
+```
 Set the fill percentage
 ```php
 // Half-filled
