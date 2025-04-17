@@ -11,7 +11,7 @@ use pocketmine\Server;
 
 class PacketListener implements Listener
 {
-	private static ?Plugin $registrant;
+	private static ?Plugin $registrant = null;
 
 	public static function isRegistered(): bool
 	{
