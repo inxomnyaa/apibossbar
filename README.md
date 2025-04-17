@@ -27,6 +27,14 @@ Set the title and/or subtitle
 $bar->setTitle(string $title = "");
 $bar->setSubTitle(string $subTitle = "");
 ```
+
+Set the color
+
+```php
+// Available Colors:
+// PINK,BLUE,RED,GREEN,YELLOW,PURPLE,REBECCA_PURPLE,WHITE
+$bar->setColor(pocketmine\network\mcpe\protocol\types\BossBarColor::RED);
+```
 Set the fill percentage
 ```php
 // Half-filled
