@@ -13,9 +13,6 @@ use pocketmine\network\mcpe\protocol\BossEventPacket;
 use pocketmine\network\mcpe\protocol\RemoveActorPacket;
 use pocketmine\network\mcpe\protocol\types\BossBarColor;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
-use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
-use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
-use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
 use pocketmine\player\Player;
 use pocketmine\Server;
 
@@ -35,22 +32,23 @@ class BossBar
 	 * This will not spawn the bar, since there would be no players to spawn it to
 	 */
 	public function __construct(){
-		$this->attributeMap = new AttributeMap();
+		$attributeMap = new AttributeMap();
+		$this->setAttributeMap($attributeMap);
 		/** @var AttributeFactory $attributeFactory */
 		$attributeFactory = AttributeFactory::getInstance();
 		$this->getAttributeMap()->add($attributeFactory->mustGet(Attribute::HEALTH)->setMaxValue(100.0)->setMinValue(0.0)->setDefaultValue(100.0));
-		$this->propertyManager = new EntityMetadataCollection();
-		$this->propertyManager->setLong(EntityMetadataProperties::FLAGS, 0
-			^ 1 << EntityMetadataFlags::SILENT
-			^ 1 << EntityMetadataFlags::INVISIBLE
-			^ 1 << EntityMetadataFlags::NO_AI
-			^ 1 << EntityMetadataFlags::FIRE_IMMUNE);
-		$this->propertyManager->setShort(EntityMetadataProperties::MAX_AIR, 400);
-		$this->propertyManager->setString(EntityMetadataProperties::NAMETAG, $this->getFullTitle());
-		$this->propertyManager->setLong(EntityMetadataProperties::LEAD_HOLDER_EID, -1);
-		$this->propertyManager->setFloat(EntityMetadataProperties::SCALE, 0);
-		$this->propertyManager->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
-		$this->propertyManager->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
+	}
+
+	/**
+	 * Creates a new bossbar for an entity
+	 *
+	 * @param Entity $entity
+	 *
+	 * @return static
+	 * @throws InvalidArgumentException
+	 */
+	public static function createForEntity(Entity $entity) : self{
+		return (new self())->setEntity($entity);
 	}
 
 	/**
@@ -250,17 +248,15 @@ class BossBar
 	public function setEntity(?Entity $entity = null) : static{
 		if($entity instanceof Entity && ($entity->isClosed() || $entity->isFlaggedForDespawn())) throw new InvalidArgumentException("Entity $entity can not be used since its not valid anymore (closed or flagged for despawn)");
 		if($this->getEntity() instanceof Entity && !$entity instanceof Player) $this->getEntity()->flagForDespawn();
-		else{
+		elseif($this->actorId !== null){
 			$pk = new RemoveActorPacket();
 			$pk->actorUniqueId = $this->actorId;
 			NetworkBroadcastUtils::broadcastPackets($this->getPlayers(), [$pk]);
 		}
 		if($entity instanceof Entity){
 			$this->actorId = $entity->getId();
-			$this->attributeMap = $entity->getAttributeMap();//TODO try some kind of auto-updating reference
-			$this->getAttributeMap()->add($entity->getAttributeMap()->get(Attribute::HEALTH));//TODO Auto-update bar for entity? Would be cool, so the api can be used for actual bosses
-			$this->propertyManager = $entity->getNetworkProperties();
-			if(!$entity instanceof Player) $entity->despawnFromAll();//TODO figure out why this is even here
+			$attributeMap = $entity->getAttributeMap();
+			$this->setAttributeMap($attributeMap);
 		} else {
 			$this->actorId = Entity::nextRuntimeId();
 		}
@@ -314,19 +310,7 @@ class BossBar
 	/**
 	 * @param Player[] $players
 	 */
-	protected function sendAttributesPacket(array $players): void
-	{//TODO might not be needed anymore
-		if ($this->actorId === null) return;
-		$pk = new UpdateAttributesPacket();
-		$pk->actorRuntimeId = $this->actorId;
-		$pk->entries = $this->getAttributeMap()->needSend();
-		NetworkBroadcastUtils::broadcastPackets($players, [$pk]);
-	}
-
-	/**
-	 * @param Player[] $players
-	 */
-	protected function sendBossHealthPacket(array $players): void
+	public function sendBossHealthPacket(array $players) : void
 	{
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
@@ -347,9 +331,8 @@ class BossBar
 		return $this->attributeMap;
 	}
 
-	protected function getPropertyManager(): EntityMetadataCollection
-	{
-		return $this->propertyManager;
+	public function setAttributeMap(AttributeMap &$attributeMap) : void{
+		$this->attributeMap = &$attributeMap;
 	}
 
 	//TODO callable on client2server register/unregister request
