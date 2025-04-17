@@ -181,7 +181,7 @@ class BossBar
 	}
 
 	public function getPercentage() : float{
-		return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue() / 100;
+		return $this->getAttributeMap()->get(Attribute::HEALTH)->getValue() / $this->getAttributeMap()->get(Attribute::HEALTH)->getMaxValue();
 	}
 
 	public function getColor() : int{

@@ -134,7 +134,7 @@ class DiverseBossBar extends BossBar
 	}
 
 	public function getPercentageFor(Player $player) : float{
-		return $this->getAttributeMap($player)->get(Attribute::HEALTH)->getValue() / 100;
+		return $this->getAttributeMap($player)->get(Attribute::HEALTH)->getValue() / $this->getAttributeMap($player)->get(Attribute::HEALTH)->getMaxValue();
 	}
 
 	/**
