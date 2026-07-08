@@ -281,7 +281,7 @@ class BossBar
 	{
 		foreach ($players as $player) {
 			if (!$player->isConnected()) continue;
-			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitle(), $this->getPercentage(), false, $this->getColor()));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitle(), $this->getPercentage(), $this->getColor()));
 		}
 	}
 
