@@ -161,7 +161,7 @@ class DiverseBossBar extends BossBar{
 	public function showTo(array $players) : void{
 		foreach($players as $player){
 			if(!$player->isConnected()) continue;
-			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), false, $this->getColorFor($player)));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), $this->getColorFor($player)));
 		}
 	}
 
@@ -171,7 +171,7 @@ class DiverseBossBar extends BossBar{
 	protected function sendBossPacket(array $players) : void{
 		foreach($players as $player){
 			if(!$player->isConnected()) continue;
-			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), false, $this->getColorFor($player)));
+			$player->getNetworkSession()->sendDataPacket(BossEventPacket::show($this->actorId ?? $player->getId(), $this->getFullTitleFor($player), $this->getPercentageFor($player), $this->getColorFor($player)));
 		}
 	}
 
