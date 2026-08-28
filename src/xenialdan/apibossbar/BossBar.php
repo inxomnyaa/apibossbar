@@ -328,7 +328,7 @@ class BossBar
 	 * @param Player|null $player Only used for DiverseBossBar
 	 * @return AttributeMap
 	 */
-	public function getAttributeMap(Player $player = null): AttributeMap
+	public function getAttributeMap(?Player $player = null): AttributeMap
 	{
 		return $this->attributeMap;
 	}
