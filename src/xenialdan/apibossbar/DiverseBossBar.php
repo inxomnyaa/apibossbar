@@ -209,8 +209,8 @@ class DiverseBossBar extends BossBar{
 		}
 	}
 
-	public function getAttributeMap(Player $player = null) : AttributeMap{
-		$attributeMap = $this->attributeMaps[$player?->getId()] ?? parent::getAttributeMap();
+	public function getAttributeMap(?Player $player = null) : AttributeMap{
+		$attributeMap = $this->attributeMaps[$player?->getId() ?? ''] ?? parent::getAttributeMap();
 		return $attributeMap;
 	}
 
